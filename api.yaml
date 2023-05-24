@@ -1,0 +1,416 @@
+openapi: 3.0.1
+info:
+  title: GreekSchools Data Service API
+  version: 0.0.1
+servers:
+  - url: https://greekschools.eu:{port}/api/{basePath} 
+    variables:
+      basePath:
+        default: v1
+      port:
+        default: "1234"
+security:
+  - bearerAuth: []
+paths:
+  /hooks:
+    post:
+      tags:
+        - hooks
+      summary: "register web hooks for data service events"
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+            example: events/hook-subscriber-url
+
+  /units: # TODO
+    parameters:
+      - $ref: "#/components/parameters/accessToken"
+    get:
+      tags:
+      - units
+      summary: Get the working units of the project
+      parameters:
+        - name: lang
+          in: query
+          example: comment
+          schema:
+            type: string
+        - name: title
+          in: query
+          example: title #  age=gt:21,lt:40 age.gt=21&age.lt=40, parent=null, children.len.gt=3
+          schema:
+            type: string
+        - name: target
+          in: query
+          schema:
+            type: string
+          description: if target is provided but is null/undefined, the query look for top level units (no parent!)
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/sortBy"
+      responses:
+        "200":
+          description: get all the working units
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/unit"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+    post:
+      tags:
+        - units
+      summary: create a new working unit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/unitRequest"
+      description: creates a new working unit
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+                example: /units/{id} 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/unit"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+  /units/{id}: 
+    parameters:
+      - $ref: "#/components/parameters/id"
+      - $ref: "#/components/parameters/accessToken"
+    get:
+      tags:
+        - units
+      responses:
+        "200":
+          description: get the unit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/unit"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+    put:
+      tags:
+        - units
+      summary: update a unit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/unitRequest"
+      responses:
+        "200":
+          description: Ok
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+    delete:
+      tags:
+        - units
+      summary: deletes a unit
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+  /units/{id}/comments: 
+    parameters:
+      - $ref: "#/components/parameters/id"
+      - $ref: "#/components/parameters/accessToken"
+    get:
+      tags:
+        - units
+      summary: Retrieves the units that are comments (language=comment) and children of the unit with the id parameter
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/unit'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+  /units/{id}/descendants: 
+    parameters:
+      - $ref: "#/components/parameters/id"
+      - $ref: "#/components/parameters/accessToken"
+    get:
+      tags:
+        - units
+      summary: Retrieves the sub tree of ancestors for the unit
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/unit'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+  /units/{id}/path:
+    parameters:
+      - $ref: "#/components/parameters/id"
+      - $ref: "#/components/parameters/accessToken"
+    get:
+      tags:
+        - units
+      summary: Retrieves the path to the unit requested
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/path'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+  /status:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/status"
+components:
+  parameters:
+    accessToken:
+      name: Authorization
+      in: header
+      required: true
+      schema:
+        type: string
+        format: JWT
+    id: 
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+      description: The number of items to skip before starting to collect the result set
+    limit:
+      in: query
+      name: limit
+      schema:
+        type: integer
+    sortBy: 
+      name: sortBy
+      in: query
+      schema:
+        type: string
+        example: "asc(fieldname)"
+  schemas:
+      idObj: 
+        type: object
+        required:
+          - id
+        properties:
+          id:
+            type: string
+            format: uuid
+      error:
+        type: object
+        properties:
+            timestamp:
+              type: string
+              format: date-time
+            message:
+              type: string
+            path:
+              type: string
+              example: /api/v1/units/
+      unitRequest: 
+        type: object
+        required:
+          - title
+          - children
+          - createdAt
+        properties:
+          createdAt:
+            type: string
+          title:
+            type: string
+          target: 
+            type: string
+            format: uuid
+          children:
+            type: array
+            items: 
+              type: string
+              format: uuid
+          ranges:
+            type: array
+            items:
+              $ref: "#/components/schemas/range"
+          creator: 
+            type: string
+            description: User id and name/label of the creator
+          dsl:
+            $ref: "#/components/schemas/dsl"
+            description: When undefined this is a container unit
+      unit:
+        allOf:
+          - $ref: "#/components/schemas/idObj"
+          - $ref: "#/components/schemas/unitRequest" 
+      path:
+        allOf:
+          - $ref: "#/components/schemas/idObj"
+          - type: object
+            required:
+              - "title"
+            properties: 
+              title:
+                type: string
+      range:
+        type: object
+        properties:
+          lineStart:
+            type: number
+          lineEnd:
+            type: number
+          colStart:
+            type: number
+          colEnd:
+            type: number 
+      dsl:
+        type: object
+        required:
+          - content
+          - language
+        properties:
+          content:
+            type: string
+            description: The code in the chosen language
+          language:
+            type: string
+            description: The dsl language id
+            example: gs-lit-app
+      status:
+        type: object
+        required:
+          - status
+          - version
+        properties:
+          status:
+            type: string
+            enum:
+              - running
+          version:
+            type: string
+            
